@@ -1,3 +1,3 @@
-# SPDX-FileCopyrightText: 2024-present Vincent Davis <forklift@vdavis.net>
+# SPDX-FileCopyrightText: 2024-present Vincent Davis <v@heteroskedastic.org>
 #
 # SPDX-License-Identifier: MIT

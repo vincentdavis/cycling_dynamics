@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cycling-dynamics"
 dynamic = ["version"]
-description = ''
+description = 'Cycling (Bicycling) models of motion, air drag, rolling resistance, power calculations.'
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -20,12 +20,12 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = ["numpy==1.26.4"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/cycling-dynamics#readme"
-Issues = "https://github.com/unknown/cycling-dynamics/issues"
-Source = "https://github.com/unknown/cycling-dynamics"
+Documentation = "https://github.com/vincentdavis/cycling-dynamics#readme"
+Issues = "https://github.com/vincentdavis/cycling-dynamics/issues"
+Source = "https://github.com/vincentdavis/cycling-dynamics"
 
 [tool.hatch.version]
 path = "src/cycling_dynamics/__about__.py"
@@ -48,11 +48,11 @@ cov = [
 ]
 
 [[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+python = ["3.11", "3.12"]
 
 [tool.hatch.envs.types]
 dependencies = [
-  "mypy>=1.0.0",
+  "mypy>=1.8.0",
 ]
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/cycling_dynamics tests}"

@@ -7,7 +7,7 @@ name = "cycling-dynamics"
 dynamic = ["version"]
 description = 'Cycling (Bicycling) models of motion, air drag, rolling resistance, power calculations.'
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 license = "MIT"
 keywords = ["cycling", "bicycle", "dynamics", "speed", "Rolling Resistance", "Air Resistance", "Calculations", "Marginal Gains"]
 authors = [
@@ -20,7 +20,10 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["numpy==1.26.4"]
+dependencies = ["numpy==1.26.4",
+    "pandas==2.2.1",
+    "pyarrow==15.0.0",
+]
 
 [project.urls]
 Documentation = "https://github.com/vincentdavis/cycling-dynamics#readme"
@@ -75,3 +78,46 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    # flake8-bugbear
+    "B",
+    # pydocstyle
+    #"D",
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    "FLY",
+    # isort
+    "I",
+    # pyupgrade
+    "UP",
+    # flake8-simplify
+    "SIM",
+    # Django
+    "DJ",
+    # Ruff
+    "RUF",
+]
+ignore = []
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"

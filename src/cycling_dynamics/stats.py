@@ -26,12 +26,13 @@ def add_metrics(df: pd.DataFrame, rolling_window: int = 30, ftp: int | None = No
     if ftp is not None:
         df["IF"] = df["np"] / ftp
         df["TSS"] = (df["power"] * df["IF"] * df["seconds"] / ftp / 3600).cumsum()
+    return df
 
 
 def create_grouped_segments(
     tracks: list[pd.DataFrame, ...], start_distance: float, length: float
 ) -> list[pd.DataFrame]:
-    """Compare multiple activites over a segment.
+    """Compare multiple activities over a segment.
     Tracks: 2 or more activities in the form of a dataframe.
     Track[0] is treated as the control/base track.
     start_point: The "distance" withing track[0] to use as the control point. You can use the exact or the closest will
@@ -86,3 +87,15 @@ def create_grouped_segments(
         trimmed_tracks.append(trimmed_track)
 
     return trimmed_tracks
+
+
+def normalized_power(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the normalized power of a ride"""
+    df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
+    return df["np"]
+
+
+def intensity_factor(df: pd.DataFrame, ftp: int) -> pd.DataFrame:
+    """Calculate the intensity factor of a ride"""
+    df["IF"] = ((df["power"] ** 4).rolling(window=30).mean() ** 0.25) / ftp
+    return df

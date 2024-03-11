@@ -57,7 +57,7 @@ def ramp_test_activity(
     """
     df, cp = convert_user_critical_power(profile)
     try:
-        assert profile[-1][0] >= test_length
+        assert max(profile.keys()) >= test_length
     except AssertionError:
         raise ValueError("The profile must end with with a time >= test_length")
     df = pd.DataFrame(profile, columns=["seconds", "power"])

@@ -55,16 +55,15 @@ def ramp_test_activity(
     segment_time: int, the time in seconds of each segment of the ramp test workout, starting after 30sec
     :return: full dataframe, workout segment dataframe, workout segment dataframe with power per ftp
     """
-    df, cp = convert_user_critical_power(profile)
     try:
         assert max(profile.keys()) >= test_length
     except AssertionError:
         raise ValueError("The profile must end with with a time >= test_length")
-    df = pd.DataFrame(profile, columns=["seconds", "power"])
-    df = _interpolate_curve(df)
+    df, cp = convert_user_critical_power(profile)
     df = df[df.seconds <= test_length].copy()
 
     df = _calculate_ramp_power(df)
+    print("hello")
 
     df["bins"] = df.apply(lambda row: row.name // segment_time + 30 if int(row.name) > 30 else row.name, axis=1)
     df["bin_power"] = df.groupby("bins")["ramp_power"].transform("mean").round(0)

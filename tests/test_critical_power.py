@@ -1,6 +1,6 @@
 """Test for the criticalPower module"""
 
-from src.cycling_dynamics.critical_power import convert_user_critical_power
+from src.cycling_dynamics.critical_power import convert_user_critical_power, ramp_test_activity
 
 
 def test_convert_user_critical_power() -> None:
@@ -19,3 +19,19 @@ def test_convert_user_critical_power() -> None:
     assert df["power"].max() == 1000
     assert df["seconds"].min() == 1
     assert df["power"].min() == 350
+
+
+def test_ramp_test_activity() -> None:
+    user_input = """1, 1000
+    5, 800
+    30, 500
+    60, 450
+    300, 400
+    1200, 350"""
+    profile = user_input.split("\n")
+    profile = [x.split(",") for x in profile]
+    profile = {int(x[0]): int(x[1]) for x in profile}
+    df, dfwko = ramp_test_activity(profile, ftp=250)
+    assert df["power"].max() == 1000
+    assert df["power"].min() == 350
+    assert dfwko["power"].max() == 1000

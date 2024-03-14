@@ -68,7 +68,6 @@ def ramp_test_activity(
     df = df[df.seconds <= test_length].copy()
 
     df = _calculate_ramp_power(df)
-    print("hello")
 
     df["bins"] = df.apply(lambda row: row.name // segment_time + 30 if int(row.name) > 30 else row.name, axis=1)
     df["bin_power"] = df.groupby("bins")["ramp_power"].transform("mean").round(0)

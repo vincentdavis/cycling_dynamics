@@ -1,11 +1,11 @@
 # DEVELOPMENT
 hatch==1.9.4
 pur==7.3.1
-ruff==0.3.2
+ruff==0.3.3
 ruff-lsp==0.0.53
 pytest==8.1.1
 pytest-cov==4.1.0
-coverage==7.4.3
+coverage==7.4.4
 mypy==1.9.0
 
 # PROJECT

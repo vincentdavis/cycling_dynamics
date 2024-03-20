@@ -32,7 +32,8 @@ class CPPoint:
 class CriticalPower:
     """Critical Power class
     activity: Activity dataframe, file path or None
-    cp_defined: dict of duration: power, User defined critical power or None
+    cp_user: dict of duration: power, User defined critical power or None. This gets converted to a dataframe and dict
+    with 1sec resolution
     max_window: int, the maximum duration to calculate, interpolate critical power, default is 1200 seconds
     """
 
@@ -48,6 +49,8 @@ class CriticalPower:
         self.cp_df: pd.DataFrame = pd.DataFrame()
         self.cp_defined_df = None  # this is the user defined CP
         self.cp_defined_dict = None  # this is the user defined CP
+        self.ramp_test_df = None
+        self.ramp_test_wko = None
         if cp_user is not None:
             self._convert_cp_defined(cp_user)
 
@@ -129,8 +132,9 @@ class CriticalPower:
             self.activity.drop(columns=f"{s}_mean", inplace=True)
         self.cp_df = pd.DataFrame(df_data)
 
-    def _calculate_ramp_power(df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate the ramp power for each second"""
+    def _calculate_ramp_power(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate the ramp power for each second
+        df is a dataframe of a 1sec resolution CP curve"""
         df["ramp_power"] = 0.0
         for idx in df.index:
             if idx == 0:
@@ -218,6 +222,8 @@ class CriticalPower:
         df_wko.sort_values(by="bins", ascending=False, inplace=True)
         df_wko.reset_index(drop=True, inplace=True)
         df_wko["segment"] = df_wko.index + 1
+        self.ramp_test_df = df
+        self.ramp_test_wko = df_wko[["segment", "duration", "power", "power%ftp"]]
         return df, df_wko[["segment", "duration", "power", "power%ftp"]]
 
     def make_zwo_from_ramp(workout: pd.DataFrame, filename: str | None, name: str, ftp: int | None = 1):

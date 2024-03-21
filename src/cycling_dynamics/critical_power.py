@@ -18,7 +18,6 @@ class CPPoint:
     seconds: int
     idx: int  # index location of the cp in the dataframe
     cp: float
-    cp: float
     std: float
     max: float
     min: float
@@ -27,6 +26,10 @@ class CPPoint:
     extra_cols: list[str]  # list of extra columns to calculate
     extra_data: dict[str:list]  # dict of data. Column names with list of values.
     intensity: float = 0
+    chr: float = 0
+    chr_std: float = 0
+    chr_max: float = 0
+    chr_min: float = 0
 
 
 class CriticalPower:
@@ -49,8 +52,11 @@ class CriticalPower:
         self.cp_df: pd.DataFrame = pd.DataFrame()
         self.cp_defined_df = None  # this is the user defined CP
         self.cp_defined_dict = None  # this is the user defined CP
-        self.ramp_test_df = None
-        self.ramp_test_wko = None
+        self.ramp_test_df: pd.DataFrame | None = None
+        self.ramp_test_wko: pd.DataFrame | None = None
+        self.activity_percent_cp: float | None = None
+        self.df_rolling: pd.DataFrame | None = None
+
         if cp_user is not None:
             self._convert_cp_defined(cp_user)
 
@@ -86,6 +92,7 @@ class CriticalPower:
         logging.info(f"Calculate critical power up to {self.max_window} seconds")
         df_data = []
         for s in range(1, self.max_window + 1):
+            # Power based CP
             self.activity[f"{s}_mean"] = self.activity["power"].rolling(window=s).mean()
             if not self.activity[f"{s}_mean"].isnull().all():
                 idx = self.activity[f"{s}_mean"].idxmax()
@@ -95,10 +102,23 @@ class CriticalPower:
                 max_w = window["power"].max()
                 min_w = window["power"].min()
                 slope_w = window["power"].loc[s // 2 : s].mean() - window["power"].loc[: s // 2].mean()
+                try:
+                    chr_w = window["heart_rate"].mean()
+                    chr_std_w = window["heart_rate"].std()
+                    chr_max_w = window["heart_rate"].max()
+                    chr_min_w = window["heart_rate"].min()
+                except Exception:
+                    logging.warning("Could not calculate heart rate metrics")
+                    chr_w = 0
+                    chr_std_w = 0
+                    chr_max_w = 0
+                    chr_min_w = 0
+
                 cols = [
                     col
                     for col in window.columns
-                    if col not in ["seconds", "power", "timestamp", "position_lat", "position_long", f"{s}_mean"]
+                    if col
+                    not in ["seconds", "power", "timestamp", "position_lat", "position_long", f"{s}_mean", "heart_rate"]
                     and not isinstance(col, int)
                 ]
                 extra_data = {}
@@ -122,6 +142,10 @@ class CriticalPower:
                     slope=slope_w,
                     extra_cols=cols,
                     extra_data=extra_data,
+                    chr=chr_w,
+                    chr_std=chr_std_w,
+                    chr_max=chr_max_w,
+                    chr_min=chr_min_w,
                 )
                 self.cp_points[s] = cpp
                 df_data_row = {
@@ -160,7 +184,7 @@ class CriticalPower:
         rolling_power_df = pd.concat([self.activity[["timestamp", "power"]], rolling_power_df], axis=1)
         return rolling_power_df
 
-    def add_cp_intensity(self, cp_user=True, length: int = 1200) -> tuple[float, pd.DataFrame]:
+    def add_cp_intensity(self, cp_activity=True, length: int = 1200) -> tuple[float, pd.DataFrame]:
         """Add critical power intensity to the activity dataframe
         df: dataframe with a power column
         cp_user: True=use user defined critical power, False=use calculated critical power from activity
@@ -168,26 +192,27 @@ class CriticalPower:
         """
         warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
         logging.info("Calculate critical power intensity")
-        if not cp_user and not self.cp_points:
+        if cp_activity and not self.cp_points:
             logging.info("Calculate critical power from ride data")
-            cp = self.calculate_cp()
-        elif not cp_user and self.cp_points:
-            cp = self.cp_points
-        else:
-            cp = self.cp_defined_dict
+            self.calculate_cp()
+            cp_points = self.cp_points
         logging.info("Calculate critical power intensity")
         df_rolling = self.get_power_roll_avg_df(length)
         logging.info("Calculate critical power intensity")
         for col in [col for col in df_rolling.columns if "power_" in col]:  # 1 second to 1200 seconds
             # Calculate rolling average for the interval
             interval = int(col.split("_")[1].replace("sec", ""))
-            df_rolling[f"percent_cp_{interval}sec"] = df_rolling[col] / cp[interval]
+            if cp_activity:
+                df_rolling[f"percent_cp_{interval}sec"] = df_rolling[col] / self.cp_points[interval].cp
+            else:
+                df_rolling[f"percent_cp_{interval}sec"] = df_rolling[col] / self.cp_defined_dict[interval]
         df_rolling["percent_total_cp"] = (
             df_rolling[[c for c in df_rolling.columns if "percent_cp_" in c]].sum(axis=1) / length
         )
-        activity_percent_cp = df_rolling["percent_total_cp"].mean()
+        self.activity_percent_cp = df_rolling["percent_total_cp"].mean()
+        self.df_rolling = df_rolling[[col for col in df_rolling.columns if "percent_" in col]]
 
-        return activity_percent_cp, df_rolling[[col for col in df_rolling.columns if "percent_" in col]]
+        return self.activity_percent_cp, self.df_rolling
 
     def ramp_test_activity(
         self, segment_time: int = 30, test_length: int = 1200, ftp: int = 1

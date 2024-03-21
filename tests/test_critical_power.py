@@ -62,3 +62,9 @@ def test_critical_power_read_fit() -> None:
     ]
     for point in correct_values:
         assert cpp.cp_points[point[0]].cp == point[1]
+
+
+def test_critical_power_add_cp_intensity() -> None:
+    FIT_FILE = "test_data/vincent_lap_1_24HOP_14012433014_ACTIVITY.fit"
+    cpp = CriticalPower(activity=FIT_FILE)
+    cpp.add_cp_intensity()

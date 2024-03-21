@@ -184,7 +184,7 @@ class CriticalPower:
         rolling_power_df = pd.concat([self.activity[["timestamp", "power"]], rolling_power_df], axis=1)
         return rolling_power_df
 
-    def add_cp_intensity(self, cp_activity=True, length: int = 1200) -> tuple[float, pd.DataFrame]:
+    def cp_intensity(self, cp_activity=True, length: int = 1200) -> tuple[float, pd.DataFrame]:
         """Add critical power intensity to the activity dataframe
         df: dataframe with a power column
         cp_user: True=use user defined critical power, False=use calculated critical power from activity

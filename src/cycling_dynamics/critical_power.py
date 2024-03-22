@@ -32,6 +32,33 @@ class CPPoint:
     chr_min: float = 0
 
 
+def _calculate_ramp_power(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the ramp power for each second
+    df is a dataframe of a 1sec resolution CP curve"""
+    df["ramp_power"] = 0.0
+    for idx in df.index:
+        if idx == 0:
+            df.loc[idx, "ramp_power"] = df.loc[idx, "power"]
+        else:
+            df.loc[idx, "ramp_power"] = df.loc[idx, "power"] * df.loc[idx, "seconds"] - df.loc[: idx - 1][
+                "ramp_power"
+            ].sum().clip(min=0)
+    return df
+
+
+def _interpolate_curve(df: pd.DataFrame) -> pd.DataFrame:
+    """Interpolate the power curve to 1 second intervals"""
+    max_time = df["seconds"].max()
+    df.set_index("seconds", inplace=True)
+    # fill in missing seconds
+    new_index = pd.Index(range(1, max_time + 1), name="seconds")
+    df = df.reindex(new_index)
+    # Interpolate power for missing seconds
+    df["power"] = df["power"].interpolate(method="linear")
+    df.reset_index(inplace=True)
+    return df
+
+
 class CriticalPower:
     """Critical Power class
     activity: Activity dataframe, file path or None
@@ -60,18 +87,6 @@ class CriticalPower:
         if cp_user is not None:
             self._convert_cp_defined(cp_user)
 
-    def _interpolate_curve(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Interpolate the power curve to 1 second intervals"""
-        max_time = df["seconds"].max()
-        df.set_index("seconds", inplace=True)
-        # fill in missing seconds
-        new_index = pd.Index(range(1, max_time + 1), name="seconds")
-        df = df.reindex(new_index)
-        # Interpolate power for missing seconds
-        df["power"] = df["power"].interpolate(method="linear")
-        df.reset_index(inplace=True)
-        return df
-
     def _convert_cp_defined(self, cp_user: dict[int, float]):
         """Convert a user defined critical power to a dict and Dataframe interpolated to every second.
         Returns: a df and a dict"""
@@ -84,7 +99,7 @@ class CriticalPower:
         logging.info(f"Last max window of profile: {max(cp_user.keys())}")
 
         df = pd.DataFrame([(k, v) for k, v in cp_user.items()], columns=["seconds", "power"])
-        self.cp_defined_df = self._interpolate_curve(df)
+        self.cp_defined_df = _interpolate_curve(df)
         self.cp_defined_dict = self.cp_defined_df.set_index("seconds")["power"].to_dict()
 
     def calculate_cp(self):
@@ -107,8 +122,9 @@ class CriticalPower:
                     chr_std_w = window["heart_rate"].std()
                     chr_max_w = window["heart_rate"].max()
                     chr_min_w = window["heart_rate"].min()
-                except Exception:
+                except Exception as err:
                     logging.warning("Could not calculate heart rate metrics")
+                    logging.warning(err)
                     chr_w = 0
                     chr_std_w = 0
                     chr_max_w = 0
@@ -156,19 +172,6 @@ class CriticalPower:
             self.activity.drop(columns=f"{s}_mean", inplace=True)
         self.cp_df = pd.DataFrame(df_data)
 
-    def _calculate_ramp_power(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Calculate the ramp power for each second
-        df is a dataframe of a 1sec resolution CP curve"""
-        df["ramp_power"] = 0.0
-        for idx in df.index:
-            if idx == 0:
-                df.loc[idx, "ramp_power"] = df.loc[idx, "power"]
-            else:
-                df.loc[idx, "ramp_power"] = df.loc[idx, "power"] * df.loc[idx, "seconds"] - df.loc[: idx - 1][
-                    "ramp_power"
-                ].sum().clip(min=0)
-        return df
-
     def get_power_roll_avg_df(self, window: int = 1200) -> pd.DataFrame:
         """Add rolling average power to the dataframe
         df: dataframe with a power column
@@ -195,7 +198,6 @@ class CriticalPower:
         if cp_activity and not self.cp_points:
             logging.info("Calculate critical power from ride data")
             self.calculate_cp()
-            cp_points = self.cp_points
         logging.info("Calculate critical power intensity")
         df_rolling = self.get_power_roll_avg_df(length)
         logging.info("Calculate critical power intensity")
@@ -230,7 +232,7 @@ class CriticalPower:
 
         df = self.cp_defined_df[self.cp_defined_df.seconds <= test_length].copy()
 
-        df = self._calculate_ramp_power(df)
+        df = _calculate_ramp_power(df)
 
         df["bins"] = df.apply(lambda row: row.name // segment_time + 30 if int(row.name) > 30 else row.name, axis=1)
         df["bin_power"] = df.groupby("bins")["ramp_power"].transform("mean").round(0)
@@ -251,8 +253,8 @@ class CriticalPower:
         self.ramp_test_wko = df_wko[["segment", "duration", "power", "power%ftp"]]
         return df, df_wko[["segment", "duration", "power", "power%ftp"]]
 
-    def make_zwo_from_ramp(workout: pd.DataFrame, filename: str | None, name: str, ftp: int | None = 1):
-        xml = ""
+    def make_zwo_from_ramp(self, workout: pd.DataFrame, filename: str | None, name: str, ftp: int | None = 1):
+        xml = "<?xml version='1.0' encoding='UTF-8'?>\n"
         xml += "<workout_file>\n"
         xml += "  <author>Vincent Davis</author>\n"
         xml += f"  <name>Most Painful Ramp Test {name}</name>\n"

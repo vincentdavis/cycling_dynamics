@@ -67,4 +67,39 @@ def test_critical_power_read_fit() -> None:
 def test_critical_power_cp_intensity() -> None:
     FIT_FILE = "test_data/vincent_lap_1_24HOP_14012433014_ACTIVITY.fit"
     cpp = CriticalPower(activity=FIT_FILE)
-    cpp.add_cp_intensity()
+    cpp.cp_intensity()
+
+
+def test_ramp_test_activity():
+    user_input = """1, 1000
+    5, 800
+    30, 500
+    60, 450
+    300, 400
+    1200, 350"""
+    profile = user_input.split("\n")
+    profile = [x.split(",") for x in profile]
+    profile = {int(x[0]): int(x[1]) for x in profile}
+    cpp = CriticalPower(cp_user=profile)
+    df, df_wko = cpp.ramp_test_activity()
+    assert df["power"].max() == 1000
+    assert df["power"].min() == 350
+    assert df_wko["power"].max() == 1000
+
+
+def test_make_zwo_from_ramp():
+    user_input = """1, 1000
+    5, 800
+    30, 500
+    60, 450
+    300, 400
+    1200, 350"""
+    profile = user_input.split("\n")
+    profile = [x.split(",") for x in profile]
+    profile = {int(x[0]): int(x[1]) for x in profile}
+    cpp = CriticalPower(cp_user=profile)
+    df, df_wko = cpp.ramp_test_activity()
+    wko1 = cpp.make_zwo_from_ramp(df_wko, filename=None, name="test", ftp=250)
+    assert wko1 is not None
+    assert wko1.startswith("<?xml version='1.0' encoding='UTF-8'?>")
+    assert wko1.endswith("</workout_file>\n")

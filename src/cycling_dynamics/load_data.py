@@ -12,7 +12,7 @@ def load_fit_file(file_path, add_metrics=True, rolling_window=30) -> pd.DataFram
     decoder = Decoder(stream)
     if not decoder.is_fit():
         logging.error(f"File is not FIT: {file_path}")
-        raise f"File is not FIT: {file_path}"
+        raise ValueError("File is not FIT: {file_path}")
     messages, errors = decoder.read()
     if errors:
         logging.error(f"Errors: {errors}")

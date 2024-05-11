@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 
 
 def plot_critical_power_intensity(
-    df, width: int = 15, intervals: list[int, ...] = [15, 30, 60, 120, 300, 600, 900, 1200]
+    df, width: int = 15, intervals: list[int, ...] = (15, 30, 60, 120, 300, 600, 900, 1200)
 ) -> px.bar:
     """Plot the critical power intensity
     df: this is the dataframe from get_critical_power_intensity(df, cp=None)

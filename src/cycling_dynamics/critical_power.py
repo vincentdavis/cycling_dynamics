@@ -5,7 +5,7 @@ import warnings
 from dataclasses import asdict, dataclass
 
 import pandas as pd
-from cycling_dynamics.load_data import load_fit_file
+from load_data import load_fit_file
 
 logging.basicConfig(level=logging.INFO)
 

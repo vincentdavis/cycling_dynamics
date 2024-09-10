@@ -18,14 +18,23 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = ["numpy>=2.1.1",
+dependencies = [
+    "numpy>=2.1.1",
     "pandas>=2.2.2",
     "matplotlib>=3.8.3",
     "pyarrow>=3.9.2",
     "garmin-fit-sdk>=21.141.0",
     "plotly>=5.24.0",
 ]
-
+[tool.uv]
+dev-dependencies = [
+    "coverage>=7.6.1",
+    "hatch>=1.12.0",
+    "mypy>=1.11.2",
+    "pytest-cov>=5.0.0",
+    "pytest>=8.3.3",
+    "ruff>=0.6.4",
+]
 [project.urls]
 Documentation = "https://github.com/vincentdavis/cycling-dynamics#readme"
 Issues = "https://github.com/vincentdavis/cycling-dynamics/issues"
@@ -79,3 +88,5 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+

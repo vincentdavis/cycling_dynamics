@@ -7,7 +7,7 @@ name = "cycling-dynamics"
 dynamic = ["version"]
 description = 'Cycling (Bicycling) models of motion, air drag, rolling resistance, power calculations.'
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = "MIT"
 keywords = ["cycling", "bicycle", "dynamics", "speed", "Rolling Resistance", "Air Resistance", "Calculations", "Marginal Gains"]
 authors = [
@@ -15,18 +15,15 @@ authors = [
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ["numpy>=1.26.4",
-    "pandas>=2.2",
-    "pyarrow>=16.0",
+dependencies = ["numpy>=2.1.1",
+    "pandas>=2.2.2",
     "matplotlib>=3.8.3",
-    "garmin-fit-sdk>=21.133.0",
-    "plotly>=5.20.0",
+    "pyarrow>=3.9.2",
+    "garmin-fit-sdk>=21.141.0",
+    "plotly>=5.24.0",
 ]
 
 [project.urls]

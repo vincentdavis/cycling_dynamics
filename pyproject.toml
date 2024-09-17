@@ -33,7 +33,6 @@ dev-dependencies = [
     "mypy>=1.11.2",
     "pytest-cov>=5.0.0",
     "pytest>=8.3.3",
-    "ruff>=0.6.4",
 ]
 [project.urls]
 Documentation = "https://github.com/vincentdavis/cycling-dynamics#readme"
@@ -87,6 +86,14 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = [
+    ".", "src"
 ]
 
 

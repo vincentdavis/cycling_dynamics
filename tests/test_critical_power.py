@@ -1,20 +1,46 @@
-"""Test for the criticalPower module"""
+"""Test for the criticalPower module."""
+
+import pytest
 
 from src.cycling_dynamics.critical_power import CriticalPower
 
+USER_INPUT = """1, 1000
+5, 800
+30, 500
+60, 450
+300, 400
+1200, 350"""
 
-def test_convert_user_critical_power() -> None:
-    """Test the conversion of user input to a dataframe and dictionary
-    This happens on class initiation if the user provides a critical power profile."""
-    user_input = """1, 1000
-    5, 800
-    30, 500
-    60, 450
-    300, 400
-    1200, 350"""
-    profile = user_input.split("\n")
+
+@pytest.fixture
+def process_user_input() -> dict[int, int]:
+    """Process the user input string into a dictionary."""
+    USER_INPUT = """1, 1000
+                            5, 800
+                            30, 500
+                            60, 450
+                            300, 400
+                            1200, 350"""
+    profile = USER_INPUT.strip().split("\n")
     profile = [x.split(",") for x in profile]
-    profile = {int(x[0]): int(x[1]) for x in profile}
+    return {int(x[0]): int(x[1]) for x in profile}
+
+
+def test_convert_user_critical_power(process_user_input) -> None:
+    """Test the conversion of user input to a dataframe and dictionary.
+
+    Convertion happens on class initiation if the user provides a critical power profile.
+    """
+    # user_input = """1, 1000
+    # 5, 800
+    # 30, 500
+    # 60, 450
+    # 300, 400
+    # 1200, 350"""
+    # profile = user_input.split("\n")
+    # profile = [x.split(",") for x in profile]
+    # profile = {int(x[0]): int(x[1]) for x in profile}
+    profile = process_user_input
     cpp = CriticalPower(cp_user=profile)
     df = cpp.cp_defined_df
     cp = cpp.cp_defined_dict
@@ -26,16 +52,14 @@ def test_convert_user_critical_power() -> None:
     assert df["power"].min() == 350
 
 
-def test_ramp_test_activity() -> None:
-    user_input = """1, 1000
-    5, 800
-    30, 500
-    60, 450
-    300, 400
-    1200, 350"""
-    profile = user_input.split("\n")
-    profile = [x.split(",") for x in profile]
-    profile = {int(x[0]): int(x[1]) for x in profile}
+def test_ramp_test_activity(process_user_input) -> None:
+    """Basic test of creating ramp test.
+
+    :param process_user_input: User input data for processing which includes user
+    profiles and other necessary information.
+    :return: None. The function performs assertions to validate the ramp test activity data.
+    """
+    profile = process_user_input
     cpp = CriticalPower(cp_user=profile)
     df, dfwko = cpp.ramp_test_activity()
     assert df["power"].max() == 1000
@@ -44,7 +68,7 @@ def test_ramp_test_activity() -> None:
 
 
 def test_critical_power_read_fit() -> None:
-    """Test the reading of a fit file"""
+    """Test the reading of a fit file."""
     FIT_FILE = "test_data/vincent_lap_1_24HOP_14012433014_ACTIVITY.fit"
     cpp = CriticalPower(activity=FIT_FILE)
     cpp.calculate_cp()
@@ -65,12 +89,21 @@ def test_critical_power_read_fit() -> None:
 
 
 def test_critical_power_cp_intensity() -> None:
+    """Basic test of calculation of CP from FIT file.
+
+    Test function for evaluating the critical power intensity calculations.
+    This function initializes a CriticalPower instance with a specified activity file
+    and then calls the `cp_intensity` method to perform the intensity computation.
+
+    :return: None
+    """
     FIT_FILE = "test_data/vincent_lap_1_24HOP_14012433014_ACTIVITY.fit"
     cpp = CriticalPower(activity=FIT_FILE)
     cpp.cp_intensity()
 
 
 def test_ramp_test_activity():
+    """Basic ramp test."""
     user_input = """1, 1000
     5, 800
     30, 500
@@ -88,6 +121,12 @@ def test_ramp_test_activity():
 
 
 def test_make_zwo_from_ramp():
+    """Runs a test to ensure that the method `make_zwo_from_ramp` generates a valid workout file from given ramp test activity data.
+
+    :param user_input: A string containing the ramp test data points, with each point consisting of duration (in seconds) and the
+    corresponding power (in watts), separated by commas and each pair on a new line.
+    :return: None
+    """
     user_input = """1, 1000
     5, 800
     30, 500

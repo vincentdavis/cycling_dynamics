@@ -6,39 +6,30 @@ from src.cycling_dynamics.calc import haversine_distance
 
 logging.basicConfig(level=logging.INFO)
 
+LAT_COL = 'position_lat'
+LON_COL = 'position_long'
+DIST_COL = 'distance'
+TIME_COL = 'timestamp'
 
-def add_metrics(df: pd.DataFrame, rolling_window: int = 30, ftp: int | None = None) -> pd.DataFrame:
-    """Add metrics to the dataframe"""
-    logging.info("Adding metrics")
-    # Speed
-    df[f"speed {rolling_window}sec"] = df["speed"].rolling(window=rolling_window).mean()
-
-    # Efficiency
-    df[f"speed per watt {rolling_window}sec"] = (
-        df["speed"].rolling(window=rolling_window).mean() / df["power"].rolling(window=rolling_window).mean()
-    )
-    df[f"speed sqrd per watt {rolling_window}sec"] = (
-        df["speed"].rolling(window=rolling_window).mean() ** 2 / df["power"].rolling(window=rolling_window).mean()
-    )
-
-    # power
-    df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
-    if ftp is not None:
-        df["IF"] = df["np"] / ftp
-        df["TSS"] = (df["power"] * df["IF"] * df["seconds"] / ftp / 3600).cumsum()
-    return df
-
-
-def create_grouped_segments(
-    tracks: list[pd.DataFrame, ...], start_distance: float, length: float
+def match_segments(
+    tracks: list[pd.DataFrame], start_distance: float, length: float
 ) -> list[pd.DataFrame]:
     """Compare multiple activities over a segment.
+
     Tracks: 2 or more activities in the form of a dataframe.
     Track[0] is treated as the control/base track.
     start_point: The "distance" withing track[0] to use as the control point. You can use the exact or the closest will
     be found.
     length: The length of the segment from the control points
     """
+    if not tracks or not all(isinstance(t, pd.DataFrame) for t in tracks):
+        raise ValueError("tracks must be a non-empty list of pandas DataFrames")
+
+    required_columns = [LAT_COL, LON_COL, DIST_COL, TIME_COL]
+    for i, track in enumerate(tracks):
+        if not all(col in track.columns for col in required_columns):
+            raise ValueError(f"Track {i} is missing required columns. Required: {required_columns}")
+
     # start_idx = control[control['distance']==start_point]['distance'].sub(start_point).abs().idxmin()
     start_idx = tracks[0]["distance"].sub(start_distance).abs().idxmin()
     logging.info(f"Start index: {start_idx}")
@@ -87,15 +78,3 @@ def create_grouped_segments(
         trimmed_tracks.append(trimmed_track)
 
     return trimmed_tracks
-
-
-def normalized_power(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate the normalized power of a ride"""
-    df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
-    return df["np"]
-
-
-def intensity_factor(df: pd.DataFrame, ftp: int) -> pd.DataFrame:
-    """Calculate the intensity factor of a ride"""
-    df["IF"] = ((df["power"] ** 4).rolling(window=30).mean() ** 0.25) / ftp
-    return df

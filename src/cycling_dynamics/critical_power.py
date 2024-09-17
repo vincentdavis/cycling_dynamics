@@ -5,14 +5,15 @@ import warnings
 from dataclasses import asdict, dataclass
 
 import pandas as pd
-from load_data import load_fit_file
+
+from cycling_dynamics.load_data import load_fit_file
 
 logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
 class CPPoint:
-    """Dataclass to hold critical power data"""
+    """Dataclass to hold critical power data."""
 
     seconds: int
     idx: int  # index location of the cp in the dataframe
@@ -32,8 +33,10 @@ class CPPoint:
 
 
 def _calculate_ramp_power(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate the ramp power for each second
-    df is a dataframe of a 1sec resolution CP curve"""
+    """Calculate the ramp power for each second.
+
+    df is a dataframe of a 1sec resolution CP curve
+    """
     df["ramp_power"] = 0.0
     for idx in df.index:
         if idx == 0:
@@ -46,7 +49,7 @@ def _calculate_ramp_power(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _interpolate_curve(df: pd.DataFrame) -> pd.DataFrame:
-    """Interpolate the power curve to 1 second intervals"""
+    """Interpolate the power curve to 1 second intervals."""
     max_time = df["seconds"].max()
     df.set_index("seconds", inplace=True)
     # fill in missing seconds
@@ -59,11 +62,12 @@ def _interpolate_curve(df: pd.DataFrame) -> pd.DataFrame:
 
 
 class CriticalPower:
-    """Critical Power class
+    """Critical Power class.
+
     activity: Activity dataframe, file path or None
     cp_user: dict of duration: power, User defined critical power or None. This gets converted to a dataframe and dict
     with 1sec resolution
-    max_window: int, the maximum duration to calculate, interpolate critical power, default is 1200 seconds
+    max_window: int, the maximum duration to calculate, interpolate critical power, default is 1200 seconds.
     """
 
     def __init__(
@@ -72,12 +76,12 @@ class CriticalPower:
         cp_user: dict[int, float] | None = None,
         max_window: int = 1200,
     ):
-        self.activity = load_fit_file(activity) if isinstance(activity, str) else activity
-        self.max_window = max_window
+        self.activity: str | pd.DataFrame = load_fit_file(activity) if isinstance(activity, str) else activity
+        self.max_window: int = max_window
         self.cp_points: dict[int, CPPoint] = {}
         self.cp_df: pd.DataFrame = pd.DataFrame()
-        self.cp_defined_df = None  # this is the user defined CP
-        self.cp_defined_dict = None  # this is the user defined CP
+        self.cp_defined_df: pd.DataFrame = None  # this is the user defined CP
+        self.cp_defined_dict: dict = None  # this is the user defined CP
         self.ramp_test_df: pd.DataFrame | None = None
         self.ramp_test_wko: pd.DataFrame | None = None
         self.activity_percent_cp: float | None = None
@@ -88,7 +92,9 @@ class CriticalPower:
 
     def _convert_cp_defined(self, cp_user: dict[int, float]):
         """Convert a user defined critical power to a dict and Dataframe interpolated to every second.
-        Returns: a df and a dict"""
+
+        :Returns: a df and a dict
+        """
         logging.info("Convert cp_defined critical power")
         try:
             assert cp_user[1] >= 0
@@ -102,7 +108,7 @@ class CriticalPower:
         self.cp_defined_dict = self.cp_defined_df.set_index("seconds")["power"].to_dict()
 
     def calculate_cp(self):
-        """Calculate the critical power of an activity"""
+        """Calculate the critical power of an activity."""
         logging.info(f"Calculate critical power up to {self.max_window} seconds")
         df_data = []
         for s in range(1, self.max_window + 1):
@@ -172,7 +178,8 @@ class CriticalPower:
         self.cp_df = pd.DataFrame(df_data)
 
     def get_power_roll_avg_df(self, window: int = 1200) -> pd.DataFrame:
-        """Add rolling average power to the dataframe
+        """Add rolling average power to the dataframe.
+
         df: dataframe with a power column
         """
         max_window = min(window, len(self.activity))
@@ -187,7 +194,8 @@ class CriticalPower:
         return rolling_power_df
 
     def cp_intensity(self, cp_activity=True, length: int = 1200) -> tuple[float, pd.DataFrame]:
-        """Add critical power intensity to the activity dataframe
+        """Add critical power intensity to the activity dataframe.
+
         df: dataframe with a power column
         cp_user: True=use user defined critical power, False=use calculated critical power from activity
         length: int, the length of CP curve, default is 1200 seconds
@@ -218,11 +226,12 @@ class CriticalPower:
     def ramp_test_activity(
         self, segment_time: int = 30, test_length: int = 1200, ftp: int = 1
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Convert a power profile to a ramp test workout
+        """Convert a power profile to a ramp test workout.
+
         The last 30sec is always 1 second ramp.
         profile: list of tuples of seconds and power [(1, 100), (2, 90), (3, 85), (4, 80)] must start with 1sec
         segment_time: int, the time in seconds of each segment of the ramp test workout, starting after 30sec
-        :return: full dataframe, workout segment dataframe, workout segment dataframe with power per ftp
+        :returns: full dataframe, workout segment dataframe, workout segment dataframe with power per ftp
         """
         try:
             assert max(self.cp_defined_dict.keys()) >= test_length
@@ -252,7 +261,7 @@ class CriticalPower:
         self.ramp_test_wko = df_wko[["segment", "duration", "power", "power%ftp"]]
         return df, df_wko[["segment", "duration", "power", "power%ftp"]]
 
-    def make_zwo_from_ramp(self, workout: pd.DataFrame, filename: str | None, name: str, ftp: int | None = 1):
+    def make_zwo_from_ramp(self, workout: pd.DataFrame, filename: str | None, name: str, ftp: int | None = 1) -> str:
         xml = "<?xml version='1.0' encoding='UTF-8'?>\n"
         xml += "<workout_file>\n"
         xml += "  <author>Vincent Davis</author>\n"

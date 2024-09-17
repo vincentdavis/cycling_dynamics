@@ -1,12 +1,15 @@
-"""Python module to contain base calculating functions"""
+"""Python module to contain base calculating functions."""
 
+import logging
 from math import asin, atan, cos, radians, sin, sqrt, tan
+
+import pandas as pd
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Calculate great circle distance between two points in a sphere,
-    given longitudes and latitudes https://en.wikipedia.org/wiki/Haversine_formula
+    """Calculate great circle distance between two points in a sphere, given longitudes and latitudes.
+
+     Referance: https://en.wikipedia.org/wiki/Haversine_formula.
 
     We know that the globe is "sort of" spherical, so a path between two points
     isn't exactly a straight line. We need to account for the Earth's curvature
@@ -29,6 +32,7 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     >>> YOSEMITE = point_2d(37.864742, -119.537521)
     >>> f"{haversine_distance(*SAN_FRANCISCO, *YOSEMITE):0,.0f} meters"
     '254,352 meters'
+
     """
     # CONSTANTS per WGS84 https://en.wikipedia.org/wiki/World_Geodetic_System
     # Distance in metres(m)
@@ -53,8 +57,7 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 def angle_type(a, b, c):
-    """
-    Calculate the cosine of the angle using Law of Cosines and determine the angle type
+    """Calculate the cosine of the angle using Law of Cosines and determine the angle type
     Is the angle between sides a and b acute, obtuse or 90 degrees (right angle)
      a: The original control point to next point on path
      b: The original control point to point on other path
@@ -69,3 +72,37 @@ def angle_type(a, b, c):
         return "before"
     else:
         return "beside"  # cos_C == 0 implies a right angle
+
+
+def add_metrics(df: pd.DataFrame, rolling_window: int = 30, ftp: int | None = None) -> pd.DataFrame:
+    """Add metrics to the dataframe"""
+    logging.info("Adding metrics")
+    # Speed
+    df[f"speed {rolling_window}sec"] = df["speed"].rolling(window=rolling_window).mean()
+
+    # Efficiency
+    df[f"speed per watt {rolling_window}sec"] = (
+        df["speed"].rolling(window=rolling_window).mean() / df["power"].rolling(window=rolling_window).mean()
+    )
+    df[f"speed sqrd per watt {rolling_window}sec"] = (
+        df["speed"].rolling(window=rolling_window).mean() ** 2 / df["power"].rolling(window=rolling_window).mean()
+    )
+
+    # power
+    df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
+    if ftp is not None:
+        df["IF"] = df["np"] / ftp
+        df["TSS"] = (df["power"] * df["IF"] * df["seconds"] / ftp / 3600).cumsum()
+    return df
+
+
+def normalized_power(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the normalized power of a ride."""
+    df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
+    return df["np"]
+
+
+def intensity_factor(df: pd.DataFrame, ftp: int) -> pd.DataFrame:
+    """Calculate the intensity factor of a ride."""
+    df["IF"] = ((df["power"] ** 4).rolling(window=30).mean() ** 0.25) / ftp
+    return df

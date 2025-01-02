@@ -3,23 +3,27 @@ import logging
 import pandas as pd
 from garmin_fit_sdk import Decoder, Stream
 
+from cycling_dynamics import calc
+from cycling_dynamics.calc import slope
+
 logging.basicConfig(level=logging.INFO)
 
 
-def load_fit_file(file_path: str, add_metrics: bool = True, rolling_window: int = 30) -> pd.DataFrame:
-    """
-    Load a FIT file and return its data as a pandas DataFrame.
+def load_fit_file(
+    file_path: str, add_fields: tuple[str] = ("seconds", "slope", "vam", "speed", "normalized_power", "air_density")
+) -> pd.DataFrame:
+    """Load a FIT file and return its data as a pandas DataFrame.
 
     Args:
         file_path (str): Path to the FIT file.
-        add_metrics (bool, optional): Flag to add additional metrics. Defaults to True.
-        rolling_window (int, optional): Window size for rolling calculations. Defaults to 30.
+        add_fields (bool, optional): Flag to add additional metrics. Defaults to True.
 
     Returns:
         pd.DataFrame: DataFrame containing the FIT file data.
 
     Raises:
         ValueError: If the file is not a valid FIT file or if there are decoding errors.
+
     """
     logging.info("Loading FIT file")
 
@@ -43,12 +47,31 @@ def load_fit_file(file_path: str, add_metrics: bool = True, rolling_window: int 
         if col in df.columns:
             df[col] = df[col] / 1e7
 
-    if "enhanced_speed" in df.columns and "speed" in df.columns:
-        logging.info("Using enhanced speed")
-        df.drop(columns=["speed"], inplace=True)
-    df.rename(columns={"enhanced_speed": "speed"}, inplace=True)
-    if "enhanced_altitude" in df.columns and "altitude" in df.columns:
-        logging.info("Using enhanced altitude")
-        df.drop(columns=["altitude"], inplace=True)
-    df.rename(columns={"enhanced_altitude": "altitude"}, inplace=True)
+    enhanced_cols = ["enhanced_distance", "enhanced_speed", "enhanced_altitude"]
+    for col in enhanced_cols:
+        if col in df.columns:
+            logging.info(f"Using {col}")
+            if col.split("_")[1] in df.columns:
+                df.drop(columns=[col.split("_")[1]], inplace=True)
+            df.rename(columns={col: col.split("_")[1]}, inplace=True)
+
+    if "seconds" in add_fields and "seconds" not in df.columns:
+        logging.info("Using calculated seconds")
+        df = calc.zero_seconds(df)
+    if "speed" in add_fields and "speed" not in df.columns:
+        logging.info("Using calculated speed")
+        df = calc.speed(df)
+    if "slope" in add_fields and "slope" not in df.columns:
+        logging.info("Using calculated slope")
+        df = slope(df)
+    if "vam" in add_fields and "vam" not in df.columns:
+        logging.info("Using calculated vertical acceleration magnitude")
+        df = calc.vam(df)
+    if "normalized_power" in add_fields and "normalized_power" not in df.columns:
+        logging.info("Using calculated normalized power")
+        df = calc.normalized_power(df)
+    if "air_density" in add_fields and "air_density" not in df.columns:
+        logging.info("Using calculated air density")
+        df = calc.air_density(df)
+
     return df

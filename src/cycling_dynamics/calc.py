@@ -3,6 +3,7 @@
 import logging
 from math import asin, atan, cos, radians, sin, sqrt, tan
 
+import numpy as np
 import pandas as pd
 
 
@@ -57,8 +58,9 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 def angle_type(a, b, c):
-    """Calculate the cosine of the angle using Law of Cosines and determine the angle type
-    Is the angle between sides a and b acute, obtuse or 90 degrees (right angle)
+    """Calculate the cosine of the angle using Law of Cosines and determine the angle type.
+
+    If the angle between sides a and b acute, obtuse or 90 degrees (right angle)
      a: The original control point to next point on path
      b: The original control point to point on other path
      c: Second point on path the other path point.
@@ -91,18 +93,75 @@ def add_metrics(df: pd.DataFrame, rolling_window: int = 30, ftp: int | None = No
     # power
     df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
     if ftp is not None:
-        df["IF"] = df["np"] / ftp
-        df["TSS"] = (df["power"] * df["IF"] * df["seconds"] / ftp / 3600).cumsum()
+        df = intensity_factor(df, ftp=ftp)
+        df = total_training_stress(df, ftp=ftp)
+        logging.info(f"Total Training Stress (TSS): {df['TSS'].iloc[-1]:0.2f} kcal/hr (FTP: {ftp})")
+    return df
+
+
+def total_training_stress(df: pd.DataFrame, ftp: int) -> pd.DataFrame:
+    """Calculat Total Training Stress."""
+    df["TSS"] = (df["power"] * df["IF"] * df["seconds"] / ftp / 3600).cumsum()
     return df
 
 
 def normalized_power(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate the normalized power of a ride."""
     df["np"] = (df["power"] ** 4).rolling(window=30).mean() ** 0.25
-    return df["np"]
+    return df
 
 
 def intensity_factor(df: pd.DataFrame, ftp: int) -> pd.DataFrame:
     """Calculate the intensity factor of a ride."""
     df["IF"] = ((df["power"] ** 4).rolling(window=30).mean() ** 0.25) / ftp
+    return df
+
+
+def vam(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate vertical ascent rate."""
+    # TODO Improve calculation by using 3 points
+    df["vam"] = (df["altitude"].diff() / df.seconds.diff()) * 3600
+    return df
+
+
+def slope(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate the slope."""
+    # TODO Improve calculation by using 3 points
+    df["slope"] = df["altitude"].diff() / df.distance.diff()
+    df["slope_3sec"] = df["slope"].rolling(window=3, center=True).mean()
+    df["slope_3sec"] = df["slope_3sec"].fillna(df["slope_3sec"])
+    return df
+
+
+def zero_seconds(df: pd.DataFrame) -> pd.DataFrame:
+    """Create or reset seconds callumn starting at zero."""
+    # TODO: make sure it is sorted
+    df["seconds"] = df["timestamp"].sub(df["timestamp"].min()).dt.total_seconds()
+    # if "seconds" not in df.columns:
+    #     df["seconds"] = pd.to_datetime(df.index, unit="s", origin="unix").astype(int) // 10**9
+    # df["seconds"] = df["seconds"] - df.seconds.min()
+    return df
+
+
+def speed(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate speed if missing."""
+    # TODO Improve calculation by using 3 points
+    df["speed"] = df.distance.diff() / df.time.diff()
+
+def speed_3sec(df: pd.DataFrame) -> pd.DataFrame:
+    df["speed_3sec"] = df["speed"].rolling(window=3, center=True).mean()
+    df['speed_3sec'] = df['speed_moving_avg'].fillna(df['speed'])
+    return df
+
+
+def air_density(df: pd.DataFrame, temperature: float = 30) -> pd.DataFrame:
+    """Calculate air density."""
+    if temperature not in df.columns:
+        logging.info("Using default temperature of 30 degrees C")
+        df["temperature"] = 30
+    df["air_density"] = (
+        (101325 / (287.05 * 273.15))
+        * (273.15 / (df["temperature"] + 273.15))
+        * np.exp((-101325 / (287.05 * 273.15)) * 9.8067 * (df["altitude"] / 101325))
+    )
     return df

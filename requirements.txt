@@ -1,7 +1,0 @@
-# PROJECT
-numpy==2.1.1
-pandas==2.2.2
-pyarrow==17.0.0
-matplotlib==3.9.2
-garmin-fit-sdk==21.141.0
-plotly==5.24.0

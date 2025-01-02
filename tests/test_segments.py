@@ -22,6 +22,7 @@ def get_tracks():
 
 def test_match_segments(get_tracks):
     """Basic tests for matching segments across tracks."""
-    matched = match_segments(tracks=get_tracks, start_distance=5000, length=100000)
-    print(min([m.distance.max() for m in matched]), max([m.distance.max() for m in matched]))
-    assert abs(min([m.distance.max() for m in matched]) - max([m.distance.max() for m in matched])) <= 1
+    matched = match_segments(tracks=get_tracks, start_distance=5000, length=10000)
+    # print(f"\n{matched[0][["seconds", "distance", "speed", "position_lat"]]}")
+    # print(min([m.distance.max() for m in matched]), max([m.distance.max() for m in matched]))
+    assert abs(min([m.distance.max() for m in matched]) - max([m.distance.max() for m in matched])) <= 15

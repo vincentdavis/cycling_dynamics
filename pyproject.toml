@@ -1,13 +1,9 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "cycling-dynamics"
-dynamic = ["version"]
 description = 'Cycling (Bicycling) models of motion, air drag, rolling resistance, power calculations.'
 readme = "README.md"
-requires-python = ">=3.12"
+version = "2025.4.1"
+requires-python = ">=3.13"
 license = "MIT"
 keywords = ["cycling", "bicycle", "dynamics", "speed", "Rolling Resistance", "Air Resistance", "Calculations", "Marginal Gains"]
 authors = [
@@ -16,15 +12,18 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
-    "numpy>=2.1.2",
+    "numpy>=2.2.4",
     "pandas>=2.2.3",
-    "matplotlib>=3.8.3",
-    "pyarrow>=17.0.0",
-    "garmin-fit-sdk>=21.141.0",
-    "plotly>=5.24.1",
+    "pyarrow>=19.0.1",
+    "garmin-fit-sdk>=21.158.0",
+    "matplotlib>=3.10.1",
+    "plotly>=6.0.1",
+    "scipy>=1.15.2",
+    "pydantic>=2.11.3",
 ]
 [tool.uv]
 dev-dependencies = [
@@ -39,36 +38,6 @@ dev-dependencies = [
 Documentation = "https://github.com/vincentdavis/cycling-dynamics#readme"
 Issues = "https://github.com/vincentdavis/cycling-dynamics/issues"
 Source = "https://github.com/vincentdavis/cycling-dynamics"
-
-[tool.hatch.version]
-path = "src/cycling_dynamics/__about__.py"
-
-[tool.hatch.envs.default]
-dependencies = [
-  "coverage[toml]>=6.5",
-  "pytest",
-]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-  "- coverage combine",
-  "coverage report",
-]
-cov = [
-  "test-cov",
-  "cov-report",
-]
-
-[[tool.hatch.envs.all.matrix]]
-python = ["3.12", "3.13"]
-
-[tool.hatch.envs.types]
-dependencies = [
-  "mypy>=1.8.0",
-]
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/cycling_dynamics tests}"
 
 [tool.coverage.run]
 source_pkgs = ["cycling_dynamics", "tests"]

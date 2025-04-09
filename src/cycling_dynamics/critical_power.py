@@ -1,4 +1,4 @@
-"""Critical power related code"""
+"""Critical power related code."""
 
 import logging
 import warnings
@@ -24,7 +24,7 @@ class CPPoint:
     slope: float
     window: pd.DataFrame  # copy of the window data
     extra_cols: list[str]  # list of extra columns to calculate
-    extra_data: dict[str:list]  # dict of data. Column names with list of values.
+    extra_data: dict[str, list]  # dict of data. Column names with list of values.
     intensity: float = 0
     chr: float = 0
     chr_std: float = 0
@@ -91,9 +91,9 @@ class CriticalPower:
             self._convert_cp_defined(cp_user)
 
     def _convert_cp_defined(self, cp_user: dict[int, float]):
-        """Convert a user defined critical power to a dict and Dataframe interpolated to every second.
+        """Convert a user defined critical power.
 
-        :Returns: a df and a dict
+        To a dict and Dataframe interpolated to every second.
         """
         logging.info("Convert cp_defined critical power")
         try:

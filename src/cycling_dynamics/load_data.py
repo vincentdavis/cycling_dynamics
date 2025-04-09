@@ -42,6 +42,9 @@ def load_fit_file(
 
     df = pd.DataFrame(messages["record_mesgs"])
 
+    if 'altitude' not in df.columns:
+        df['altitude'] = 0
+
     # Convert lat/long to decimal degrees
     for col in ["position_lat", "position_long"]:
         if col in df.columns:

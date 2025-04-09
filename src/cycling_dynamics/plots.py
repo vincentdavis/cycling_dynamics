@@ -38,7 +38,7 @@ def plot_critical_power_intensity(
 
 
 def plot_activity_critical_power(df: pd.DataFrame) -> go.Figure:
-    """Plot the critical power of an activity
+    """Plot the critical power of an activity.
     df: with df being the critical power dataframe from critical_power(df)['df']
     returns: fig
     """

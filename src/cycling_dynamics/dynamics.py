@@ -22,7 +22,7 @@ def simulator(
     df: Usually from a FIT file or other GPS file. Required columns [distance, speed and/or time, altitude]
     """
     try:
-        assert all([c in df.columns for c in ["distance", "altitude"]])
+        assert all([c in df.columns for c in ["seconds", "distance", "altitude"]])
     except AssertionError:
         raise AssertionError("Missing columns in dataframe. Must have 'seconds', 'distance', and 'altitude'")
 
@@ -38,6 +38,7 @@ def simulator(
     df["rolling_watts"] = (
         np.cos(np.arctan(df["slope"])) * 9.8067 * (bike_weight + rider_weight) * rolling_resistance * df["speed"]
     )
+    # TODO: Diff should use smooting.
     df["acceleration_watts"] = (bike_weight + rider_weight) * (df["speed"].diff() / df["seconds"].diff()) * df["speed"]
     df["est_power_no_loss"] = df[["air_drag_watts", "climbing_watts", "rolling_watts", "acceleration_watts"]].sum(
         axis="columns"
@@ -45,6 +46,7 @@ def simulator(
     df["est_power"] = df["est_power_no_loss"] / (1 - efficiency_loss)
     df["efficiency_loss_watts"] = df["est_power_no_loss"] - df["est_power"]
     df["est_power_no_acceleration"] = (df["est_power_no_loss"] - df["acceleration_watts"]) / (1 - efficiency_loss)
+    df["power_error"] = df["est_power"] - df["power"]
 
     if smoothing > 0:
         df["speed_smoothed"] = df["speed"].rolling(window=smoothing, center=True).mean()
@@ -59,5 +61,6 @@ def simulator(
         df["est_power_no_acceleration_smoothed"] = (
             df["est_power_no_acceleration"].rolling(window=smoothing, center=True).mean()
         )
+        df["power_error_smoothed"] = df["est_power_smoothed"] - df["power_smoothed"]
 
     return df

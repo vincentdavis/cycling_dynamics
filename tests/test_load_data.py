@@ -14,6 +14,7 @@ FIT_FILES = [
     "vincent_lap_1_24HOP_14012433014_ACTIVITY.fit",
     "vincent_lap_2_24HOP_14010180820_ACTIVITY.fit",
     "vincent_mtb_id_surface_14517623900_ACTIVITY.fit",
+    "North_Table_to_Lookout_MTB.fit",
 ]
 TEST_DATA_DIR = "test_data"
 

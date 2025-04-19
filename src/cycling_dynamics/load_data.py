@@ -10,7 +10,8 @@ logging.basicConfig(level=logging.INFO)
 
 
 def load_fit_file(
-    file_path: str, add_fields: tuple[str] = ("seconds", "slope", "vam", "speed", "normalized_power", "air_density")
+    file_path: str,
+    add_fields: tuple[str] = ("seconds", "slope", "vam", "speed", "normalized_power", "air_density", "heading"),
 ) -> pd.DataFrame:
     """Load a FIT file and return its data as a pandas DataFrame.
 
@@ -42,8 +43,8 @@ def load_fit_file(
 
     df = pd.DataFrame(messages["record_mesgs"])
 
-    if 'altitude' not in df.columns:
-        df['altitude'] = 0
+    if "altitude" not in df.columns:
+        df["altitude"] = 0
 
     # Convert lat/long to decimal degrees
     for col in ["position_lat", "position_long"]:
@@ -76,5 +77,8 @@ def load_fit_file(
     if "air_density" in add_fields and "air_density" not in df.columns:
         logging.info("Using calculated air density")
         df = calc.air_density(df)
+    if "heading" in add_fields and "heading" not in df.columns:
+        logging.info("Using calculated heading")
+        df = calc.calculate_heading(df)
 
     return df
